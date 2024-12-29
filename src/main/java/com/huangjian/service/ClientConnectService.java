@@ -139,7 +139,7 @@ public class ClientConnectService {
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
-//请输入文件路径:
+
 ///Users/huanghuangjian/Downloads/index.png
     }
 
