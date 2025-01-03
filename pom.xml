@@ -28,12 +28,14 @@
       <version>2.0.53</version>
     </dependency>
 
-    <!-- https://mvnrepository.com/artifact/com.aayushatharva.brotli4j/brotli4j -->
+    <!-- https://mvnrepository.com/artifact/com.github.luben/zstd-jni -->
     <dependency>
-      <groupId>com.aayushatharva.brotli4j</groupId>
-      <artifactId>brotli4j</artifactId>
-      <version>1.18.0</version>
+      <groupId>com.github.luben</groupId>
+      <artifactId>zstd-jni</artifactId>
+      <version>1.5.5-10</version>
     </dependency>
+
+
 
   </dependencies>
 </project>

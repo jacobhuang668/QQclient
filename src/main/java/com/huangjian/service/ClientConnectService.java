@@ -6,12 +6,14 @@ import com.huangjian.qqcommon.Message;
 import com.huangjian.qqcommon.MessageType;
 import com.huangjian.qqcommon.User;
 import com.huangjian.utilities.ByteUtilies;
-import com.huangjian.utilities.ByteUtilities;
 import com.huangjian.utilities.ManageSocketThreadCollection;
 import com.huangjian.utilities.RetainSocketThread;
 
-import java.io.*;
+import java.io.ByteArrayOutputStream;
+import java.io.FileInputStream;
+import java.io.IOException;
 import java.net.Socket;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.LocalDate;
@@ -61,6 +63,7 @@ public class ClientConnectService {
         }
         return login;
     }
+
     public void getOnlineUserCount(String userId) {
         RetainSocketThread retainSocketThread = ManageSocketThreadCollection.getThreadSocket(userId);
         Message message = new Message();
@@ -70,78 +73,145 @@ public class ClientConnectService {
         message.setReceiver("服务器");
         String messageJsonString = JSON.toJSONString(message);
         try {
-            ByteUtilies.writeBytes(retainSocketThread.getSocket(),messageJsonString.getBytes());
+            ByteUtilies.writeBytes(retainSocketThread.getSocket(), messageJsonString.getBytes());
         } catch (Exception e) {
             e.printStackTrace();
             try {
                 retainSocketThread.getSocket().close();
             } catch (IOException ex) {
-               ex.printStackTrace();
+                ex.printStackTrace();
             }
         }
     }
 
-    public void exit(String userId){
+    public void exit(String userId) {
         RetainSocketThread retainSocketThread = ManageSocketThreadCollection.getThreadSocket(userId);
         try {
-            Message message=new Message();
+            Message message = new Message();
             message.setMsgType(MessageType.USER_QUIT_COMMAND);
             message.setSendTime(LocalDate.now());
             message.setSender(userId);
             message.setReceiver("server");
             String jsonString = JSON.toJSONString(message);
-            ByteUtilies.writeBytes(retainSocketThread.getSocket(),jsonString.getBytes());
+            ByteUtilies.writeBytes(retainSocketThread.getSocket(), jsonString.getBytes());
         } catch (Exception e) {
             e.printStackTrace();
         }
 
     }
 
-    public void privateChat(String senderUserId,String recipientUserId,String content){
+    public void privateChat(String senderUserId, String recipientUserId, String content) {
         RetainSocketThread retainSocketThread = ManageSocketThreadCollection.getThreadSocket(senderUserId);
         try {
-            Message message=new Message();
+            Message message = new Message();
             message.setReceiver(recipientUserId);
             message.setSender(senderUserId);
             message.setContent(content);
             message.setSendTime(LocalDate.now());
             message.setMsgType(MessageType.PRIVATE_CHAT_COMMAND);
             String jsonString = JSON.toJSONString(message);
-            ByteUtilies.writeBytes(retainSocketThread.getSocket(),jsonString.getBytes());
+            ByteUtilies.writeBytes(retainSocketThread.getSocket(), jsonString.getBytes());
 
         } catch (Exception e) {
-           e.printStackTrace();
+            e.printStackTrace();
         }
 
     }
 
-    public void sendFile(String senderUserId,String receiver,String filePath){
-
-        //通过文件路径获取文件
+    public void sendFile(String senderUserId, String receiver, String filePath) {
         try {
             RetainSocketThread threadSocket = ManageSocketThreadCollection.getThreadSocket(senderUserId);
-            ByteArrayOutputStream bos =new ByteArrayOutputStream();
             FileInputStream fis = new FileInputStream(filePath);
-            int readIndex=0;
-            byte[] bytes=new byte[1024];
-            while((readIndex=fis.read(bytes))!=-1){
-                bos.write(bytes,0,readIndex);
-            }
+            int readIndex = 0;
+            byte[] bytes = new byte[1024*5];
             Path path = Paths.get(filePath);
-            Message message=new Message();
+            while ((readIndex = fis.read(bytes)) != -1) {
+                byte[] chunk = new byte[readIndex];
+                /**
+                 * bytes 是一个缓冲区（字节数组），通常用于存储从文件中读取的数据。在你的代码中，bytes 的大小是 1024，即每次从文件中最多读取 1024 字节的数据。
+                 * chunk 是一个字节数组，用来存放实际的文件数据块。在这个例子中，chunk 存储的是当前块的数据。
+                 * readIndex 是当前实际读取的字节数，表示从 bytes 中读取的有效数据量。
+                 */
+                System.arraycopy(bytes, 0, chunk, 0, readIndex);
+                Message message = new Message();
+                message.setMsgType(MessageType.SEND_FILE_COMMAND);
+                message.setSender(senderUserId);
+                message.setReceiver(receiver);
+                message.setSendTime(LocalDate.now());
+                message.setContent(ByteUtilies.encode(chunk));
+                String jsonString = JSON.toJSONString(message);
+                String encode = ByteUtilies.encode(jsonString.getBytes());
+                ByteUtilies.writeBytes(threadSocket.getSocket(), encode.getBytes());
+            }
+            //发送结束标识
+            Message message = new Message();
             message.setMsgType(MessageType.SEND_FILE_COMMAND);
             message.setSender(senderUserId);
             message.setReceiver(receiver);
             message.setSendTime(LocalDate.now());
-            message.setContent(ByteUtilities.encode(bos.toByteArray())+"$"+path.getFileName().toString());
+            //结束标识符
+            String fileName = "END_OF_FILE" + path.getFileName().toString();
+            message.setContent(ByteUtilies.encode(fileName.getBytes()));
             String jsonString = JSON.toJSONString(message);
-            ByteUtilies.writeBytes(threadSocket.getSocket(),jsonString.getBytes());
+            String encode = ByteUtilies.encode(jsonString.getBytes());
+            ByteUtilies.writeBytes(threadSocket.getSocket(), encode.getBytes());
+
         } catch (Exception e) {
-            throw new RuntimeException(e);
+            e.printStackTrace();
         }
 
-///Users/huanghuangjian/Downloads/index.png
+///Users/huanghuangjian/Downloads/index.png,/Users/huanghuangjian/Downloads/MP4/JP1882.mp4
     }
+
+    public static void main2(String[] args) throws Exception {
+        int CHUNK_SIZE = 10 * 1024 * 1024;
+        String filePath = "/Users/huanghuangjian/Downloads/index.png";
+        ByteArrayOutputStream bos = new ByteArrayOutputStream();
+        FileInputStream fis = new FileInputStream(filePath);
+        int readIndex = 0;
+        byte[] bytes = new byte[1024];
+        Path path = Paths.get(filePath);
+        while ((readIndex = fis.read(bytes)) != -1) {
+            byte[] chunk = new byte[readIndex];
+            Message message = new Message();
+            message.setMsgType(MessageType.SEND_FILE_COMMAND);
+            message.setSendTime(LocalDate.now());
+            System.arraycopy(bytes, 0, chunk, 0, readIndex);
+            String fileName = "$" + path.getFileName().toString();
+            byte[] mergeByteArrays = ByteUtilies.mergeByteArrays(chunk, fileName.getBytes());
+
+            message.setContent(ByteUtilies.encode(mergeByteArrays));
+            String jsonString = JSON.toJSONString(message);
+
+            String encode = ByteUtilies.encode(jsonString.getBytes());
+            byte[] decode = ByteUtilies.decode(encode);
+            String newJsonString = new String(decode);
+            Message message1 = JSON.parseObject(newJsonString, Message.class);
+            byte[] decode1 = ByteUtilies.decode(message1.getContent());
+
+            System.err.println("content" + new String(decode1));
+
+        }
+
+
+    }
+
+    public static void main(String[] args) throws Exception {
+        String text = "你好，世界！";
+
+        // 编码为 Base64
+        String encoded = ByteUtilies.encode(text.getBytes());
+        System.out.println("Encoded: " + encoded);
+
+        // 解码 Base64
+        byte[] decodedBytes = ByteUtilies.decode(encoded);
+        String decoded = new String(decodedBytes, StandardCharsets.UTF_8); // 默认使用系统字符集
+        System.out.println("Decoded: " + decoded);
+        String[] $s = "$index.png".split("$");
+        System.out.println("$index.png".contains("$"));
+        System.out.println("$index.png".charAt(0));
+    }
+
 
 }
 
