@@ -20,6 +20,10 @@ public class RetainSocketThread extends Thread {
         this.accumulatedBytes = new byte[0]; // 初始状态为空数组
     }
 
+    public RetainSocketThread() {
+        this.accumulatedBytes = new byte[0]; // 初始状态为空数组
+    }
+
     private StringBuffer sb = new StringBuffer();
 
     @Override
@@ -58,9 +62,9 @@ public class RetainSocketThread extends Thread {
                         fos.close();
                         sb.setLength(0);
                     } else {
-                        //持续接受客户端消息
-                        byte[] accumulate = accumulate(contentDecode);
-                        accumulatedBytes=accumulate;
+                        //持续接受客户端消息,有严重问题，
+                         accumulate(contentDecode);
+                        //accumulatedBytes=accumulate;
                     }
 
                 } else if (MessageType.SEND_FILE_FAIL.equals(message.getMsgType())) {
@@ -84,19 +88,19 @@ public class RetainSocketThread extends Thread {
      * @param inputBytes 传入的字节数组
      * @return 新的累加字节数组
      */
-    public  byte[] accumulate(byte[] inputBytes){
+    public  void accumulate(byte[] inputBytes){
         if(inputBytes.length==0||inputBytes==null){
-            return Arrays.copyOf(accumulatedBytes,accumulatedBytes.length);
+            return;
         }
         // 创建新的数组用于存储累加结果
         byte[] newAccumulatedBytes=new byte[accumulatedBytes.length+inputBytes.length];
+        System.out.println("newAccumulatedBytes:"+newAccumulatedBytes.length);
         // 拷贝已有数据
         System.arraycopy(accumulatedBytes,0,newAccumulatedBytes,0,accumulatedBytes.length);
         // 添加新的数据
         System.arraycopy(inputBytes,0,newAccumulatedBytes,accumulatedBytes.length,inputBytes.length);
         // 更新累加状态
         accumulatedBytes = newAccumulatedBytes;
-        return Arrays.copyOf(accumulatedBytes, accumulatedBytes.length); // 返回累加结果
     }
 
     public Socket getSocket() {

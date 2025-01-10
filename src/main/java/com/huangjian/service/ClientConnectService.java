@@ -13,7 +13,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.net.Socket;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.LocalDate;
@@ -123,7 +122,7 @@ public class ClientConnectService {
             RetainSocketThread threadSocket = ManageSocketThreadCollection.getThreadSocket(senderUserId);
             FileInputStream fis = new FileInputStream(filePath);
             int readIndex = 0;
-            byte[] bytes = new byte[1024*5];
+            byte[] bytes = new byte[1024 * 20];
             Path path = Paths.get(filePath);
             while ((readIndex = fis.read(bytes)) != -1) {
                 byte[] chunk = new byte[readIndex];
@@ -160,58 +159,8 @@ public class ClientConnectService {
             e.printStackTrace();
         }
 
-///Users/huanghuangjian/Downloads/index.png,/Users/huanghuangjian/Downloads/MP4/JP1882.mp4
-    }
-
-    public static void main2(String[] args) throws Exception {
-        int CHUNK_SIZE = 10 * 1024 * 1024;
-        String filePath = "/Users/huanghuangjian/Downloads/index.png";
-        ByteArrayOutputStream bos = new ByteArrayOutputStream();
-        FileInputStream fis = new FileInputStream(filePath);
-        int readIndex = 0;
-        byte[] bytes = new byte[1024];
-        Path path = Paths.get(filePath);
-        while ((readIndex = fis.read(bytes)) != -1) {
-            byte[] chunk = new byte[readIndex];
-            Message message = new Message();
-            message.setMsgType(MessageType.SEND_FILE_COMMAND);
-            message.setSendTime(LocalDate.now());
-            System.arraycopy(bytes, 0, chunk, 0, readIndex);
-            String fileName = "$" + path.getFileName().toString();
-            byte[] mergeByteArrays = ByteUtilies.mergeByteArrays(chunk, fileName.getBytes());
-
-            message.setContent(ByteUtilies.encode(mergeByteArrays));
-            String jsonString = JSON.toJSONString(message);
-
-            String encode = ByteUtilies.encode(jsonString.getBytes());
-            byte[] decode = ByteUtilies.decode(encode);
-            String newJsonString = new String(decode);
-            Message message1 = JSON.parseObject(newJsonString, Message.class);
-            byte[] decode1 = ByteUtilies.decode(message1.getContent());
-
-            System.err.println("content" + new String(decode1));
-
-        }
-
 
     }
-
-    public static void main(String[] args) throws Exception {
-        String text = "你好，世界！";
-
-        // 编码为 Base64
-        String encoded = ByteUtilies.encode(text.getBytes());
-        System.out.println("Encoded: " + encoded);
-
-        // 解码 Base64
-        byte[] decodedBytes = ByteUtilies.decode(encoded);
-        String decoded = new String(decodedBytes, StandardCharsets.UTF_8); // 默认使用系统字符集
-        System.out.println("Decoded: " + decoded);
-        String[] $s = "$index.png".split("$");
-        System.out.println("$index.png".contains("$"));
-        System.out.println("$index.png".charAt(0));
-    }
-
 
 }
 
