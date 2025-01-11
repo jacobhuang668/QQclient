@@ -8,9 +8,6 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.net.Socket;
-import java.time.LocalDate;
-import java.util.Arrays;
-import java.util.Scanner;
 
 public class RetainSocketThread extends Thread {
     private Socket socket;
@@ -69,6 +66,8 @@ public class RetainSocketThread extends Thread {
 
                 } else if (MessageType.SEND_FILE_FAIL.equals(message.getMsgType())) {
                     System.err.println(message.getContent());
+                }else if(MessageType.RECIVER_SERVER_MESSAGE.equals(message.getMsgType())){
+                    System.out.println("接受服务器消息："+message);
                 }
 
             }

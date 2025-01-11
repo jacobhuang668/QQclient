@@ -20,4 +20,9 @@ public interface MessageType {
     String SEND_FILE_SUCCEED="12";
     String SEND_FILE_FAIL="13";
 
+    //服务器群发消息
+    String RECIVER_SERVER_MESSAGE="14";
+    String RECIVER_SERVER_MESSAGE_SUCCESS="15";
+    String RECIVER_SERVER_MESSAGE_FAIL="16";
+
 }
